@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sentinel HID Attack Detection &amp; Response Dashboard — Real-time monitoring for USB-based keystroke injection attacks, rogue HID device detection, and forensic snapshot capture.">
+  <meta name="theme-color" content="#0a0e1a">
+  <title>Sentinel — HID Attack Detection Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
+</head>
+<body>
+  <div class="dashboard-container">
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         HEADER
+         ═══════════════════════════════════════════════════════════════════ -->
+    <header class="header glass">
+      <div class="header-left">
+        <span class="logo">◆ SENTINEL</span>
+        <span class="header-subtitle">HID Attack Detection &amp; Response</span>
+      </div>
+      <div class="header-right">
+        <div class="status-badge" id="system-status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">OFFLINE</span>
+        </div>
+        <span class="version-badge" id="version">v1.0.0</span>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         STATS ROW
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="stats-row" id="stats-row">
+      <!-- Threat Gauge -->
+      <div class="stat-card" style="display:flex;align-items:center;justify-content:center;">
+        <div class="gauge-container" id="threat-gauge">
+          <svg viewBox="0 0 140 80" width="140" height="80">
+            <!-- Background arc -->
+            <path d="M 15 75 A 55 55 0 0 1 125 75" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8" stroke-linecap="round"/>
+            <!-- Value arc -->
+            <path id="gauge-arc" d="M 15 75 A 55 55 0 0 1 125 75" fill="none" stroke="var(--severity-low)" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 173" style="transition: stroke-dasharray 1s ease, stroke 0.5s ease;"/>
+          </svg>
+          <div class="gauge-label">
+            <span id="gauge-value">0</span>
+            <div class="gauge-sublabel">Threat Level</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-label">Total Alerts</div>
+      </div>
+      <div class="stat-card severity-critical">
+        <div class="stat-value" style="color:var(--severity-critical)" id="stat-critical">0</div>
+        <div class="stat-label">Critical</div>
+      </div>
+      <div class="stat-card severity-high">
+        <div class="stat-value" style="color:var(--severity-high)" id="stat-high">0</div>
+        <div class="stat-label">High</div>
+      </div>
+      <div class="stat-card severity-medium">
+        <div class="stat-value" style="color:var(--severity-medium)" id="stat-medium">0</div>
+        <div class="stat-label">Medium</div>
+      </div>
+      <div class="stat-card severity-low">
+        <div class="stat-value" style="color:var(--severity-low)" id="stat-low">0</div>
+        <div class="stat-label">Low / Info</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--severity-critical)" id="stat-killed">0</div>
+        <div class="stat-label">Procs Killed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--accent-cyan)" id="stat-snapshots">0</div>
+        <div class="stat-label">Snapshots</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODULE STATUS BAR
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="modules-bar" id="modules-bar">
+      <div class="module-pill offline" id="module-hardware_watcher">
+        <span class="module-dot"></span>
+        <span>Hardware Watcher</span>
+      </div>
+      <div class="module-pill offline" id="module-behavioral_analyzer">
+        <span class="module-dot"></span>
+        <span>Behavioral Analyzer</span>
+      </div>
+      <div class="module-pill offline" id="module-process_sentinel">
+        <span class="module-dot"></span>
+        <span>Process Sentinel</span>
+      </div>
+      <div class="module-pill offline" id="module-alert_engine">
+        <span class="module-dot"></span>
+        <span>Alert Engine</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         ALERT TIMELINE CHART
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="chart-section glass">
+      <div class="section-title">Alert Timeline</div>
+      <canvas id="timeline-chart" class="chart-canvas"></canvas>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MAIN GRID: Alert Feed + Snapshot Panel
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="main-grid">
+      <!-- ALERT FEED -->
+      <div class="alert-feed glass">
+        <div class="alert-feed-header">
+          <div class="section-title">Live Alert Feed</div>
+          <span class="text-muted" id="alert-count">0 alerts</span>
+        </div>
+        <div class="alert-feed-body" id="alert-feed-body">
+          <div class="empty-state" id="alert-empty">
+            <div class="empty-state-icon">🛡️</div>
+            <div>No alerts yet — system monitoring...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SNAPSHOT PANEL -->
+      <div class="snapshot-panel glass">
+        <div class="snapshot-panel-header">
+          <div class="section-title">📸 Snapshots</div>
+          <span class="text-muted" id="snapshot-count">0 snapshots</span>
+        </div>
+        <div class="snapshot-list" id="snapshot-list">
+          <div class="empty-state" id="snapshot-empty">
+            <div class="empty-state-icon">📂</div>
+            <div>No snapshots captured yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         CONTROLS BAR
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="controls-bar glass" style="padding: 16px;">
+      <button class="btn btn-start" id="btn-start" onclick="app.start()">
+        ▶ Start
+      </button>
+      <button class="btn btn-stop" id="btn-stop" onclick="app.stop()" disabled>
+        ⏹ Stop
+      </button>
+      <button class="btn btn-snapshot" id="btn-snapshot" onclick="app.manualSnapshot()">
+        📸 Snapshot
+      </button>
+      <button class="btn btn-clear" onclick="app.clearAlerts()">
+        🗑 Clear Log
+      </button>
+      <button class="btn btn-export" onclick="app.exportAlerts()">
+        ⬇ Export
+      </button>
+      <button class="btn btn-clear" onclick="app.clearSnapshots()">
+        🗑 Clear Snapshots
+      </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         FOOTER
+         ═══════════════════════════════════════════════════════════════════ -->
+    <footer class="footer">
+      <div class="footer-links">
+        <span>Sentinel v1.0.0</span>
+        <span>Logs: ~/.sentinel/logs</span>
+        <span>Snapshots: ~/.sentinel/snapshots</span>
+        <span id="clock"></span>
+      </div>
+      <div style="margin-top:8px;">Developed by <strong>Kunal S &amp; Ayush K</strong></div>
+    </footer>
+
+  </div>
+
+  <!-- Toast notification container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
