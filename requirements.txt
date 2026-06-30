@@ -1,14 +1,16 @@
-# Sentinel — runtime dependencies
-# ================================
-# All Windows-only; the framework targets Windows 10/11 hosts.
+# Sentinel runtime dependencies
+# ============================
+# The monitoring components target Windows 10/11 hosts.
 
-pywin32>=306          # Win32 API access (registry, services, events)
-wmi>=1.5.1            # WMI queries for process & device enumeration
-pynput>=1.7.6         # Low-level keyboard hook (no admin required)
-psutil>=5.9.8         # Process inspection & system metrics
+psutil>=5.9.8
+
+# Windows-only integrations
+pywin32>=306; platform_system == "Windows"
+wmi>=1.5.1; platform_system == "Windows"
+pynput>=1.7.6; platform_system == "Windows"
 
 # Web dashboard
-flask>=3.0            # Lightweight web server for dashboard UI
-flask-socketio>=5.3   # WebSocket support for real-time alert streaming
-gevent>=24.0          # Async transport for Flask-SocketIO
-gevent-websocket>=0.10.1  # WebSocket handler for gevent
+Flask>=3.0.3
+Flask-SocketIO>=5.3.2
+gevent>=24.0.2
+gevent-websocket>=0.10.1
